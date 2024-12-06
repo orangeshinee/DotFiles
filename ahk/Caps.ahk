@@ -25,34 +25,31 @@ isEnglishMode() {
         "ahk_id " DllCall("imm32\ImmGetDefaultIMEWnd", "Uint", hWnd, "Uint")
     )
     ; 其他    0-1
-    return result
+    return (Mod(result, 2) = 0)
 }
-
 
 setIME(setSts, win_id := "") { ; 设置输入法状态-获取状态-末位设置
     ErrorLevel := SendMessage(0x283, 0x001, 0, , "ahk_id" win_id, , , , 1000)
     CONVERSIONMODE := 2046 & ErrorLevel, CONVERSIONMODE += setSts
     ErrorLevel := SendMessage(0x283, 0x002, CONVERSIONMODE, , "ahk_id" win_id, , , , 1000)
     ErrorLevel := SendMessage(0x283, 0x006, setSts, , "ahk_id" win_id, , , , 1000)
-    Return ErrorLevel
+    return ErrorLevel
 }
-
 
 getIMEwinid() { ; 获取激活窗口IME线程id
-    If WinActive("ahk_class ConsoleWindowClass") {
+    if WinActive("ahk_class ConsoleWindowClass") {
         win_id := WinGetID("ahk_exe conhost.exe")
-    } Else If WinActive("ahk_group focus_control_ahk_group") {
+    } else if WinActive("ahk_group focus_control_ahk_group") {
         CClassNN := ControlGetFocus("A")
-        If (CClassNN = "")
+        if (CClassNN = "")
             win_id := WinGetID("A")
-        Else
+        else
             win_id := ControlGetHwnd(CClassNN)
-    } Else
+    } else
         win_id := WinGetID("A")
     IMEwin_id := DllCall("imm32\ImmGetDefaultIMEWnd", "Uint", win_id, "Uint")
-    Return IMEwin_id
+    return IMEwin_id
 }
-
 
 getCurrentIMEID() {
     ; 获取当前窗口使用IME的ID
@@ -61,7 +58,6 @@ getCurrentIMEID() {
     InuptLocalID := DllCall("GetKeyboardLayout", "uint", ThreadID, "uint")
     return InuptLocalID
 }
-
 
 $CapsLock::
 {
@@ -73,7 +69,6 @@ $CapsLock::
         setIME(1, gl_Active_IME_winID)
     }
 }
-
 
 ;参考https://github.com/Vonng/Capslock/tree/master
 ;=====================================================================o
@@ -87,10 +82,9 @@ $CapsLock::
 ;-----------------------------------o---------------------------------o
 CapsLock & h::
 {
-    if GetKeyState("control") = 0
-    {
+    if GetKeyState("control") = 0 {
         if GetKeyState("Alt") = 0
-            ; 无 左移一字
+        ; 无 左移一字
             Send "{Left}"
         else
         ; ! 左选一字
@@ -108,11 +102,9 @@ CapsLock & h::
     }
 }
 
-
 CapsLock & j::
 {
-    if GetKeyState("control") = 0
-    {
+    if GetKeyState("control") = 0 {
         if GetKeyState("Alt") = 0
             Send "{Down}"
         else
@@ -130,8 +122,7 @@ CapsLock & j::
 
 CapsLock & k::
 {
-    if GetKeyState("control") = 0
-    {
+    if GetKeyState("control") = 0 {
         if GetKeyState("Alt") = 0
             Send "{Up}"
         else
@@ -149,8 +140,7 @@ CapsLock & k::
 
 CapsLock & l::
 {
-    if GetKeyState("control") = 0
-    {
+    if GetKeyState("control") = 0 {
         if GetKeyState("Alt") = 0
             Send "{Right}"
         else
@@ -165,7 +155,6 @@ CapsLock & l::
         return
     }
 }
-
 
 ;=====================================================================o
 ;                       CapsLock Switcher:                           ;|
@@ -193,8 +182,7 @@ CapsLock & `::
 ;-----------------------------------o---------------------------------o
 CapsLock & i::
 {
-    if GetKeyState("control") = 0
-    {
+    if GetKeyState("control") = 0 {
         if GetKeyState("Alt") = 0
             Send "{Home}"
         else
@@ -212,8 +200,7 @@ CapsLock & i::
 
 CapsLock & o::
 {
-    if GetKeyState("control") = 0
-    {
+    if GetKeyState("control") = 0 {
         if GetKeyState("Alt") = 0
             Send "{End}"
         else
@@ -229,7 +216,6 @@ CapsLock & o::
     }
 }
 
-
 ;=====================================================================o
 ;                      CapsLock Page Navigator
 ;-----------------------------------o---------------------------------o
@@ -239,8 +225,7 @@ CapsLock & o::
 ;-----------------------------------o---------------------------------o
 CapsLock & u::
 {
-    if GetKeyState("control") = 0
-    {
+    if GetKeyState("control") = 0 {
         if GetKeyState("Alt") = 0
             Send "{PgUp}"
         else
@@ -256,11 +241,9 @@ CapsLock & u::
     }
 }
 
-
 CapsLock & p::
 {
-    if GetKeyState("control") = 0
-    {
+    if GetKeyState("control") = 0 {
         if GetKeyState("Alt") = 0
             Send "{PgDn}"
         else
@@ -275,26 +258,3 @@ CapsLock & p::
         return
     }
 }
-
-
-;=====================================================================o
-;                            CapsLock Editor                         ;|
-;-----------------------------------o---------------------------------o
-;                     CapsLock + z  |  Ctrl + z (Cancel)             ;|
-;                     CapsLock + x  |  Ctrl + x (Cut)                ;|
-;                     CapsLock + c  |  Ctrl + c (Copy)               ;|
-;                     CapsLock + v  |  Ctrl + z (Paste)              ;|
-;                     CapsLock + a  |  Ctrl + a (Select All)         ;|
-;                     CapsLock + y  |  Ctrl + z (Yeild)              ;|
-;                     CapsLock + w  |  Ctrl + Right(Move as [vim: w]);|
-;                     CapsLock + b  |  Ctrl + Left (Move as [vim: b]);|
-;-----------------------------------o---------------------------------o
-CapsLock & z:: Send("^z")
-CapsLock & x:: Send("^x")
-CapsLock & c:: Send("^c")
-CapsLock & v:: Send("^v")
-CapsLock & a:: Send("^a")
-CapsLock & y:: Send("^y")
-CapsLock & w:: Send("{Right}")
-CapsLock & b:: Send("{Left}")
-;---------------------------------------------------------------------o
