@@ -258,3 +258,15 @@ CapsLock & p::
         return
     }
 }
+
+logMessage(message) {
+    ; 获取当前脚本所在的目录
+    scriptDir := A_ScriptDir
+    logFile := scriptDir . "\log.log"
+    
+    ; 获取当前时间
+    currentTime := FormatTime("yyyyMMdd HH:mm:ss")
+    
+    ; 打开日志文件以追加模式
+    FileAppend(currentTime " - " message "`n", logFile)
+}
