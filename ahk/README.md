@@ -9,3 +9,4 @@ Caps键位单按改成切换中英文，通过`sendMessage`方式进行切换，
 同时，还配合[KBLAutoSwitch AHK](https://github.com/flyinclouds/KBLAutoSwitch) 进行自动切换；
 
 
+新增ChangeVoice功能，通过快捷键快速切换系统语音设置，方便在不同语音场景间切换；
