@@ -8,6 +8,9 @@ FileCreateShortcut A_ScriptFullPath, A_Startup "\startAHK.lnk"
 TraySetIcon("./Sunrise.ico")
 A_IconTip := "河童小生的AHK脚本"
 
+; 导入ChangeVoice脚本功能
+#Include ChangeVoice.ahk
+
 isEnglishMode() {
     ; 判断是否为英文模式
     try {
