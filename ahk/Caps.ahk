@@ -11,67 +11,25 @@ A_IconTip := "河童小生的AHK脚本"
 ; 导入ChangeVoice脚本功能
 #Include ChangeVoice.ahk
 
-isEnglishMode() {
-    ; 判断是否为英文模式
-    try {
-        hWnd := WinGetID("A")
-    } catch Error {
-        ; ^Esc 开始菜单弹窗，卡死在找不到当前窗口
-        return
-    }
-    result := SendMessage(
-        0x283,          ; Message : WM_IME_CONTROL
-        0x001,          ; wParam  : IMC_GETCONVERSIONMODE
-        0,              ; lParam  ： (NoArgs)
-        ,               ; Control ： (Window)
-        ; 获取当前输入法的模式
-        "ahk_id " DllCall("imm32\ImmGetDefaultIMEWnd", "Uint", hWnd, "Uint")
-    )
-    ; 其他    0-1
-    return (Mod(result, 2) = 0)
-}
 
-setIME(setSts, win_id := "") { ; 设置输入法状态-获取状态-末位设置
-    ErrorLevel := SendMessage(0x283, 0x001, 0, , "ahk_id" win_id, , , , 1000)
-    CONVERSIONMODE := 2046 & ErrorLevel, CONVERSIONMODE += setSts
-    ErrorLevel := SendMessage(0x283, 0x002, CONVERSIONMODE, , "ahk_id" win_id, , , , 1000)
-    ErrorLevel := SendMessage(0x283, 0x006, setSts, , "ahk_id" win_id, , , , 1000)
-    return ErrorLevel
-}
-
-getIMEwinid() { ; 获取激活窗口IME线程id
-    if WinActive("ahk_class ConsoleWindowClass") {
-        win_id := WinGetID("ahk_exe conhost.exe")
-    } else if WinActive("ahk_group focus_control_ahk_group") {
-        CClassNN := ControlGetFocus("A")
-        if (CClassNN = "")
-            win_id := WinGetID("A")
-        else
-            win_id := ControlGetHwnd(CClassNN)
-    } else
-        win_id := WinGetID("A")
-    IMEwin_id := DllCall("imm32\ImmGetDefaultIMEWnd", "Uint", win_id, "Uint")
-    return IMEwin_id
-}
-
-getCurrentIMEID() {
-    ; 获取当前窗口使用IME的ID
-    winID := WinGetID("A")
-    ThreadID := DllCall("GetWindowThreadProcessId", "uint", winID, 0)
-    InuptLocalID := DllCall("GetKeyboardLayout", "uint", ThreadID, "uint")
-    return InuptLocalID
-}
-
-$CapsLock::
+; 初始化 CapsLock 状态变量
+global LevelError := 0
+; CapsLock 热键设置
+CapsLock::
 {
-    ; 切换中英文输入
-    gl_Active_IME_winID := getIMEwinid()
-    if (isEnglishMode()) {
-        setIME(0, gl_Active_IME_winID)
-    } else {
-        setIME(1, gl_Active_IME_winID)
-    }
+    global LevelError := KeyWait("CapsLock", "T0.3")
 }
+
+CapsLock Up::
+{
+    global LevelError
+    if (LevelError > 0) {
+        ; 发送右Shift切换输入法
+        Send "^ "
+    }
+    LevelError := 0
+}
+
 
 ;参考https://github.com/Vonng/Capslock/tree/master
 ;=====================================================================o
