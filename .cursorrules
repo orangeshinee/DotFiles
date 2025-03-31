@@ -1,0 +1,32 @@
+# AutoHotkey 版本设置
+language_version:
+  autohotkey: "2.0"
+
+# 代码格式化规则
+formatting:
+  enabled: true
+  indent_style: space
+  indent_size: 4
+  trim_trailing_whitespace: true
+  insert_final_newline: true
+  max_line_length: 120
+
+# 忽略规则
+ignore:
+  - "*.log"
+  - "logs/"
+  - "temp/"
+  - ".git/"
+  - ".vscode/"
+  - "node_modules/"
+
+# 代码质量规则
+quality:
+  check_syntax: true
+  check_style: true
+  check_documentation: true
+
+# 文档规则
+documentation:
+  require_comments: true
+  require_function_docs: true 
