@@ -1,0 +1,13 @@
+{
+    "description": "全局 ⌘+option+⇧+u PicGo 上传剪贴板图片",
+    "manipulators": [
+        {
+            "from": {
+                "key_code": "u",
+                "modifiers": { "mandatory": ["command", "shift", "option"] }
+            },
+            "to": [{ "shell_command": "/Users/xiaoliya/Documents/Projects/DotFiles/scripts/upload_clipboard_img.sh" }],
+            "type": "basic"
+        }
+    ]
+}
