@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 
 # 如果脚本由 Karabiner 调用，需要显式设置 PATH
-export PATH="/opt/homebrew/bin:$PATH"
+export PATH="/opt/homebrew/bin:/usr/bin:$PATH"
+
+# 通知函数：使用 macOS 系统级 Alert
+notify() {
+  local title="$1"
+  local message="$2"
+  local if_success="$3"
+  local sound="Sosumi"
+  if [[ "$if_success" == 1 ]]; then
+    sound="Purr"
+  fi
+  terminal-notifier -title "$title" -message "$message" -sound "$sound"
+}
 
 # 脚本所在目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -39,7 +51,7 @@ if [[ -n "$URL" ]]; then
   # 上传成功：记录、复制链接并通知
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] 上传成功：$URL" >> "$LOG_FILE"
 printf "%s" "$URL" | pbcopy
-osascript -e "display notification \"$URL\" with title \"PicGo 上传成功\""
+notify "PicGo 上传成功" "$URL" 1
 echo "$URL"
   exit 0
 else
@@ -47,6 +59,6 @@ else
   ERR="$(echo "$OUTPUT" | sed -n 's/.*\[PicGo ERROR\]: *//p' | head -n1)"
   [[ -z "$ERR" ]] && ERR="剪贴板无图片或上传失败"
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] 上传失败：$ERR" >> "$LOG_FILE"
-  osascript -e "display notification \"$ERR\" with title \"PicGo 上传失败\""
+  notify "PicGo 上传失败" "$ERR" 0
   exit 1
 fi
