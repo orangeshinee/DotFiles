@@ -1,0 +1,41 @@
+{
+	"schemaVersion": "0.1.0",
+	"name": "WebCut",
+	"behavior": "create",
+	"noteContentFormat": "{{content}}",
+	"properties": [
+		{
+			"name": "标题",
+			"value": "{{\\\"title\\\"}-{{\\\"如果标题为英文，则将其翻译为中文；对标题进行简化，突出主要内容\\\"}}",
+			"type": "text"
+		},
+		{
+			"name": "链接",
+			"value": "{{url}}",
+			"type": "text"
+		},
+		{
+			"name": "作者",
+			"value": "{{author|split:\\\", \\\"|wikilink|join}}",
+			"type": "text"
+		},
+		{
+			"name": "创建时间",
+			"value": "{{date}}",
+			"type": "text"
+		},
+		{
+			"name": "摘要",
+			"value": "{{\\\"One-sentence summary of the article content,translated to Chinese\\\"}}",
+			"type": "text"
+		},
+		{
+			"name": "tags",
+			"value": "resource/clips,{{\\\"请分析下面的文章内容，根据PARA标签体系，为文章推荐最合适的标签组合 ## 标签体系说明 我使用基于PARA方法论的标签体系，包括以下主要类别： ### 主要类别标签（必选，至少选择一个） - **#area/xxx**：长期关注的领域，如：   - area/ai（AI相关）   - area/data（数据分析）   - area/product（产品管理）   - area/coding（编程相关）   - area/tools（工具相关）  - **#project/xxx**：短期项目，如：   - project/work（工作项目）   - project/server（服务器相关）   - project/pkm（个人知识管理）   - project/image-hosting（图床项目）  - **#resource/xxx**：资源类内容，如：   - resource/readings（阅读材料）   - resource/blogs（博客文章）   - resource/ai/prompts（AI提示词）   - resource/methodology（方法论）  - **#archive/xxx**：归档内容，如：   - archive/quotes（引用与金句）   - archive/reports（报告存档）  ### 横切标签（可选，根据需要添加） - **状态标签**：#status/active、#status/pending、#status/completed - **类型标签**：#type/article、#type/tutorial、#type/reference、#type/idea - **回顾标签**：#review/weekly、#review/monthly、#review/yearly\\\"}}",
+			"type": "multitext"
+		}
+	],
+	"triggers": [],
+	"noteNameFormat": "{{\"title\"}}",
+	"path": "97📦 WebCut"
+}
