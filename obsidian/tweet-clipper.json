@@ -54,5 +54,5 @@
 		"/^https:\\/\\/x\\.com\\/.+?\\/status\\/\\d+$/"
 	],
 	"noteNameFormat": "Tweet - {{selector:article[tabindex=\"-1\"][data-testid=\"tweet\"] [data-testid=\"User-Name\"] span.css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3|first|safe_name}} ({{selector:article[tabindex=\"-1\"][data-testid=\"tweet\"] a[role=\"link\"] > time?datetime|date:\"YYYY-MM-DD HH[h]mm\"}})",
-	"path": "97📦 WebCut"
+	"path": "97_WebCut/Tweet"
 }
