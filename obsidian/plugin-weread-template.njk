@@ -1,0 +1,44 @@
+---
+isbn: {{metaData.isbn}}
+category: {{metaData.category}}
+lastReadDate: {{metaData.lastReadDate}}
+出版社: {{metaData.publisher}}
+出版时间: {{metaData.publishTime}}
+原书链接: {{metaData.pcUrl}}
+---
+
+# 书名：[{{metaData.title}}]({{metaData.pcUrl}})
+
+> [!abstract]- 《{{metaData.title}}》
+> - ![{{metaData.title}}|200]({{metaData.cover}})
+> - 简介：{{metaData.intro | replace('\r\n', '') | replace('\n', '')}}
+> - 划线数量：{{metaData.noteCount}} 
+> - 笔记数量：{{metaData.reviewCount}}
+# 本书评论
+{% if bookReview.bookReviews %}{% for bookReview in bookReview.bookReviews %}
+> [!note] 书评 No.{{loop.index}}
+> {{bookReview.mdContent}} ^{{note.data.reviewId}}{% endfor%}{% endif %}
+# 笔记
+{%- set allNotes = [] -%}
+{%- for highlightItem in chapterHighlights -%}
+{%- for highlight in highlightItem.highlights -%}
+{%- set allNotes = allNotes.concat({'type': 'highlight', 'data': highlight, 'range': highlight.range.split("-")[0] | int}) -%}{%- endfor -%}{%- endfor -%}
+{%- for reviewitem in bookReview.chapterReviews -%}
+{%- for review in reviewitem.reviews -%}
+{%- set allNotes = allNotes.concat({'type': 'review', 'data': review,'range': review.range.split("-")[0] | int}) -%}{%- endfor -%}
+{%- for chapterReview in reviewitem.chapterReviews -%}
+{%- set allNotes = allNotes.concat({'type': 'chapterReview', 'data': chapterReview}) -%}{%- endfor -%}{%- endfor -%}
+{%- set allNotes = allNotes|sort(attribute='data.chapterUid')|groupby('data.chapterUid') -%}
+{% for chapterUid, notes in allNotes %}
+## {{notes[0].data.chapterTitle}}<br>
+{%- for note in notes|sort(attribute='range') %}
+{% if note.type == 'highlight' and not note.data.reviewContent %}> [!quote] {{ note.data.markText | trim }} ^{{ note.data.bookmarkId }}{{note.data.range}}
+{% elif note.type == 'review' %}> [!quote] {{ note.data.abstract | trim}}
+{% for line in note.data.content.split('\n') %}> {{line | trim}} ^{{note.data.reviewId}}
+{% endfor %}> <div style="text-align: right;color: rosybrown;font-style: italic;font-size: small;">-- {{note.data.createTime}}</div>
+{% elif note.type == 'chapterReview' %}
+###### 🗣章节评论
+{% for line in note.data.content.split('\n') %} - {{line | trim}} ^{{note.data.reviewId}}{% endfor %}
+{%- endif %}
+{%- endfor %}
+{% endfor %}
