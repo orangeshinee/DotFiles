@@ -32,9 +32,9 @@ lastReadDate: {{metaData.lastReadDate}}
 {% for chapterUid, notes in allNotes %}
 ## {{notes[0].data.chapterTitle}}<br>
 {%- for note in notes|sort(attribute='range') %}
-{% if note.type == 'highlight' and not note.data.reviewContent %}> [!quote] {{ note.data.markText | trim }} ^{{ note.data.bookmarkId }}{{note.data.range}}
-{% elif note.type == 'review' %}> [!quote] {{ note.data.abstract | trim}}
-{% for line in note.data.content.split('\n') %}> {{line | trim}} ^{{note.data.reviewId}}
+{% if note.type == 'highlight' and not note.data.reviewContent %}> [!quote] {{ note.data.markText | trim }} ^{{ note.data.bookmarkId }}
+{% elif note.type == 'review' %}> [!quote] {{ note.data.abstract | trim}} ^{{note.data.reviewId}}
+{% for line in note.data.content.split('\n') %}> {{line | trim}}
 {% endfor %}> <div style="text-align: right;color: rosybrown;font-style: italic;font-size: small;">-- {{note.data.createTime}}</div>
 {% elif note.type == 'chapterReview' %}
 ###### 🗣章节评论
