@@ -11,7 +11,6 @@ A_IconTip := "河童小生的AHK脚本"
 ; 导入ChangeVoice脚本功能
 #Include ChangeVoice.ahk
 
-
 ; 初始化 CapsLock 状态变量
 global LevelError := 0
 ; CapsLock 热键设置
@@ -29,7 +28,6 @@ CapsLock Up::
     }
     LevelError := 0
 }
-
 
 ;参考https://github.com/Vonng/Capslock/tree/master
 ;=====================================================================o
@@ -224,10 +222,22 @@ logMessage(message) {
     ; 获取当前脚本所在的目录
     scriptDir := A_ScriptDir
     logFile := scriptDir . "\log.log"
-    
+
     ; 获取当前时间
     currentTime := FormatTime("yyyyMMdd HH:mm:ss")
-    
+
     ; 打开日志文件以追加模式
     FileAppend(currentTime " - " message "`n", logFile)
+}
+
+; 调取picgo上传剪贴板的图片,并返回上传后的图片地址
+^+u::
+{
+    ; 获取 AHK 脚本目录
+    scriptDir := A_ScriptDir
+    ; 拼接相对路径（../scripts/upload.bat）
+    RegExMatch(scriptDir, "(.+\\\K|^)[^\\]+(?=\\)", &m)
+    batPath := m[1] m[0] "\scripts\upload_clipboard_img.bat"
+    Run(batPath, , "Hide")
+    return
 }
