@@ -1,0 +1,38 @@
+{
+    "picBed": {
+        "uploader": "aws-s3-plist",
+        "current": "aws-s3-plist",
+        "aws-s3-plist": {
+            "accessKeyID": "",
+            "secretAccessKey": "",
+            "bucketName": "pics",
+            "uploadPath": "{year}/{month}/{md5}.{extName}",
+            "region": "auto",
+            "endpoint": "https://xx.r2.cloudflarestorage.com",
+            "rejectUnauthorized": false,
+            "acl": "public-read",
+            "pathStyleAccess": true,
+            "urlPrefix": "https://a.com",
+            "disableBucketPrefixToURL": true
+        }
+    },
+    "picgoPlugins": {},
+    "buildIn": {
+        "compress": {
+            "quality": "85",
+            "isConvert": true,
+            "convertFormat": "webp",
+            "isReSize": false,
+            "reSizeWidth": 500,
+            "reSizeHeight": 500,
+            "skipReSizeOfSmallImg": true,
+            "isReSizeByPercent": false,
+            "reSizePercent": 50,
+            "isFlip": false,
+            "isFlop": false,
+            "isRotate": false,
+            "rotateDegree": 90,
+            "isRemoveExif": true
+        }
+    }
+}
