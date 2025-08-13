@@ -1,0 +1,21 @@
+{
+    "picBed": {
+        "uploader": "aws-s3",
+        "current": "aws-s3",
+        "aws-s3": {
+            "accessKeyID": "",
+            "secretAccessKey": "",
+            "bucketName": "pics",
+            "uploadPath": "{year}/{month}/{md5}.{extName}",
+            "region": "auto",
+            "endpoint": "https://a.r2.cloudflarestorage.com",
+            "rejectUnauthorized": false,
+            "acl": "public-read",
+            "pathStyleAccess": true,
+            "outputURLPattern": "{protocol}://pics.a.site{path:/pics/i,''}"
+        }
+    },
+    "picgoPlugins": {
+        "picgo-plugin-s3": true
+    }
+}
