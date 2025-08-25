@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         CopyAsMarkdown
 // @namespace    http://tampermonkey.net/
-// @version      1.9
+// @version      2.0
 // @description  快速复制当前网页地址为markdown格式 [title](url)，支持自定义快捷键，自动去除网站名称后缀
 // @author       MrHeTony
 // @match        *://*/*
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @icon         data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxwYXRoIGQ9Ik04IDRINmEyIDIgMCAwMC0yIDJ2MTJhMiAyIDAgMDAyIDJoMTJhMiAyIDAgMDAyLTJWNmEyIDIgMCAwMC0yLTJoLTIiIHN0cm9rZT0iIzY2N2VlYSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICAgIDxyZWN0IHg9IjgiIHk9IjIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiIHJ4PSIxIiByeT0iMSIgc3Ryb2tlPSIjNjY3ZWVhIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgPHBhdGggZD0iTTE2IDExSDgiIHN0cm9rZT0iIzY2N2VlYSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICAgIDxwYXRoIGQ9Ik0xNiAxNUgxMCIgc3Ryb2tlPSIjNjY3ZWVhIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K
 // ==/UserScript==
 
 (function() {
@@ -21,8 +22,8 @@
     // 防重复创建标志
     let buttonCreated = false;
 
-    // 获取清理后的标题
-    function getCleanTitle() {
+    // 获取清理后的标题（去重版本）
+    function getCleanTitleDedup() {
         let title = document.title.trim();
         if (!title) {
             const h1 = document.querySelector('h1');
@@ -53,43 +54,62 @@
             }
         }
         
-        return title.trim() || '无标题';
-    }
-
-    // 获取清理后的标题（去重版本）
-    function getCleanTitleDedup() {
-        let title = document.title.trim();
-        if (!title) {
-            const h1 = document.querySelector('h1');
-            if (h1) title = h1.textContent.trim();
-        }
-        
-        // 移除markdown中的特殊字符
-        title = title
-            .replace(/[\[\]\(\)]/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
+        // 处理标题中的重复内容
+        const parts = title.split(/\s*[-–—|]\s*/);
+        if (parts.length > 1) {
+            const lastPart = parts[parts.length - 1].trim();
+            const mainTitle = parts[0].trim();
             
-        // 移除常见的重复后缀，如" - 知乎"、" - 简书"等
-        title = title.replace(/\s*[-–—]\s*(.*)\1$/, '');
-        
-        // 移除网站名称后缀（常见模式）
-        const sitePatterns = [
-            /[\s-–—|]\s*[^-–—|]*$/i,  // 匹配最后的分隔符和网站名
-            /\s*\|\s*.*$/i,            // 匹配 | 分隔的网站名
-            /\s*-\s*.*官网$/i,         // 匹配 - 官网
-            /\s*-\s*.*官方.*$/i        // 匹配 - 官方xx
-        ];
-        
-        for (const pattern of sitePatterns) {
-            const newTitle = title.replace(pattern, '');
-            if (newTitle.trim()) {
-                title = newTitle;
-                break;
+            // 检查最后一部分是否是前面内容的重复或相似
+            const similarity = calculateSimilarity(mainTitle, lastPart);
+            if (similarity > 0.7 || mainTitle.includes(lastPart) || lastPart.includes(mainTitle)) {
+                title = mainTitle;
             }
         }
         
         return title.trim() || '无标题';
+    }
+
+    // 计算两个字符串的相似度
+    function calculateSimilarity(str1, str2) {
+        if (!str1 || !str2) return 0;
+        
+        const longer = str1.length > str2.length ? str1 : str2;
+        const shorter = str1.length > str2.length ? str2 : str1;
+        
+        if (longer.length === 0) return 1.0;
+        
+        const distance = levenshteinDistance(longer, shorter);
+        return (longer.length - distance) / longer.length;
+    }
+
+    // 计算编辑距离
+    function levenshteinDistance(str1, str2) {
+        const matrix = [];
+        
+        for (let i = 0; i <= str2.length; i++) {
+            matrix[i] = [i];
+        }
+        
+        for (let j = 0; j <= str1.length; j++) {
+            matrix[0][j] = j;
+        }
+        
+        for (let i = 1; i <= str2.length; i++) {
+            for (let j = 1; j <= str1.length; j++) {
+                if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1
+                    );
+                }
+            }
+        }
+        
+        return matrix[str2.length][str1.length];
     }
 
     // 创建悬浮图标按钮
@@ -150,6 +170,177 @@
         return button;
     }
 
+    // 创建设置按钮
+    function createSettingsButton() {
+        const settingsButton = document.createElement('div');
+        settingsButton.id = 'markdown-copy-settings-btn';
+        settingsButton.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 6V3M12 21V18M18.79 15.21L21 16.5M3 7.5L5.21 8.79M21 7.5L18.79 8.79M3 16.5L5.21 15.21M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12ZM12 18C13.6569 18 15 19.3431 15 21C15 22.6569 13.6569 24 12 24C10.3431 24 9 22.6569 9 21C9 19.3431 10.3431 18 12 18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `;
+        settingsButton.title = '设置快捷键';
+        settingsButton.style.cssText = `
+            position: fixed !important;
+            top: calc(25% + 50px) !important; /* 位于复制按钮下方 */
+            right: 0 !important;
+            transform: translateY(-50%) !important;
+            z-index: 2147483647 !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px 0 0 8px !important;
+            padding: 12px 8px !important;
+            cursor: pointer !important;
+            box-shadow: -2px 0 15px rgba(0,0,0,0.3) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 44px !important;
+            height: 44px !important;
+            opacity: 0.8 !important;
+            user-select: none !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        `;
+
+        settingsButton.addEventListener('mouseenter', function() {
+            this.style.opacity = '1';
+            this.style.transform = 'translateY(-50%) translateX(-5px)';
+            this.style.boxShadow = '-5px 0 25px rgba(0,0,0,0.4)';
+        });
+
+        settingsButton.addEventListener('mouseleave', function() {
+            this.style.opacity = '0.8';
+            this.style.transform = 'translateY(-50%) translateX(0)';
+            this.style.boxShadow = '-2px 0 15px rgba(0,0,0,0.3)';
+        });
+
+        settingsButton.addEventListener('click', showSettingsModal);
+        return settingsButton;
+    }
+
+    // 创建设置模态框
+    function createSettingsModal() {
+        const modal = document.createElement('div');
+        modal.id = 'markdown-copy-settings-modal';
+        modal.style.cssText = `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 2147483647 !important;
+            background: white !important;
+            border-radius: 8px !important;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3) !important;
+            padding: 20px !important;
+            width: 300px !important;
+            max-width: 90% !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            color: #333 !important;
+            display: none; /* 默认隐藏 */
+        `;
+        modal.innerHTML = `
+            <h3 style="margin-top: 0; color: #667eea;">快捷键设置</h3>
+            <p style="font-size: 14px; margin-bottom: 15px;">输入您想要的快捷键 (例如: Alt+Shift+M)</p>
+            <input type="text" id="shortcut-input" value="${CONFIG.shortcut}" style="
+                width: calc(100% - 20px);
+                padding: 10px;
+                margin-bottom: 15px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 14px;
+            ">
+            <div style="display: flex; justify-content: flex-end;">
+                <button id="save-shortcut-btn" style="
+                    background: #667eea;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 15px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    margin-right: 10px;
+                ">保存</button>
+                <button id="cancel-shortcut-btn" style="
+                    background: #f0f0f0;
+                    color: #333;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    padding: 8px 15px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">取消</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // 使模态框可拖拽
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        modal.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - modal.getBoundingClientRect().left;
+            offsetY = e.clientY - modal.getBoundingClientRect().top;
+            modal.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            modal.style.left = `${e.clientX - offsetX}px`;
+            modal.style.top = `${e.clientY - offsetY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            modal.style.cursor = 'grab';
+        });
+
+        document.getElementById('save-shortcut-btn').addEventListener('click', saveShortcut);
+        document.getElementById('cancel-shortcut-btn').addEventListener('click', hideSettingsModal);
+        return modal;
+    }
+
+    // 显示设置模态框
+    function showSettingsModal() {
+        const modal = document.getElementById('markdown-copy-settings-modal');
+        if (modal) {
+            document.getElementById('shortcut-input').value = CONFIG.shortcut; // 确保显示当前快捷键
+            modal.style.display = 'block';
+        }
+    }
+
+    // 隐藏设置模态框
+    function hideSettingsModal() {
+        const modal = document.getElementById('markdown-copy-settings-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // 保存快捷键
+    function saveShortcut() {
+        const newShortcut = document.getElementById('shortcut-input').value.trim();
+        if (newShortcut) {
+            GM_setValue('shortcut', newShortcut);
+            CONFIG.shortcut = newShortcut; // 更新内存中的配置
+            updateButtonTitle(); // 更新按钮提示
+            showNotification('快捷键已保存!', true);
+            hideSettingsModal();
+        } else {
+            showNotification('快捷键不能为空!', false);
+        }
+    }
+
+    // 更新按钮的title属性
+    function updateButtonTitle() {
+        const button = document.getElementById('markdown-copy-floating-btn');
+        if (button) {
+            button.title = `复制为Markdown格式 [title](url)\n快捷键: ${CONFIG.shortcut}`;
+        }
+    }
+
     // 复制到剪贴板的函数
     async function copyToClipboard(text) {
         try {
@@ -177,42 +368,7 @@
         }
     }
 
-    // 获取页面标题，去除特殊字符
-    function getCleanTitle() {
-        let title = document.title.trim();
-        if (!title) {
-            // 如果没有标题，尝试从其他地方获取
-            const h1 = document.querySelector('h1');
-            if (h1) title = h1.textContent.trim();
-        }
-        
-        // 移除markdown中的特殊字符
-        title = title
-            .replace(/[\[\]\(\)]/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-            
-        // 移除常见的重复后缀，如" - 知乎"、" - 简书"等
-        title = title.replace(/\s*[-–—]\s*(.*)\1$/, '');
-        
-        // 移除网站名称后缀（常见模式）
-        const sitePatterns = [
-            /[\s-–—|]\s*[^-–—|]*$/i,  // 匹配最后的分隔符和网站名
-            /\s*\|\s*.*$/i,            // 匹配 | 分隔的网站名
-            /\s*-\s*.*官网$/i,         // 匹配 - 官网
-            /\s*-\s*.*官方.*$/i        // 匹配 - 官方xx
-        ];
-        
-        for (const pattern of sitePatterns) {
-            const newTitle = title.replace(pattern, '');
-            if (newTitle.trim()) {
-                title = newTitle;
-                break;
-            }
-        }
-        
-        return title.trim() || '无标题';
-    }
+    // 删除重复的 getCleanTitle 函数，使用上面的 getCleanTitleDedup
 
     // 显示提示消息
     function showNotification(message, isSuccess = true) {
@@ -277,7 +433,7 @@
 
     // 主要功能：复制markdown格式链接
     async function copyMarkdownLink() {
-        const title = getCleanTitle();
+        const title = getCleanTitleDedup();
         const url = window.location.href;
         const markdownLink = `[${title}](${url})`;
 
@@ -292,34 +448,40 @@
         }
     }
 
-    // 初始化按钮
-    function initializeButton() {
+    // 初始化按钮和设置
+    function initializeUI() {
         // 确保不重复创建
         if (buttonCreated || document.getElementById('markdown-copy-floating-btn')) {
             return;
         }
 
-        const button = createFloatingButton();
-        if (button) {
-            button.addEventListener('click', copyMarkdownLink);
+        const copyButton = createFloatingButton();
+        const settingsButton = createSettingsButton();
+        const settingsModal = createSettingsModal();
 
-            // 使用多种方法确保按钮被正确添加
-            const addButton = () => {
-                if (document.body) {
-                    document.body.appendChild(button);
-                    console.log('Markdown复制按钮已添加');
-                } else {
-                    setTimeout(addButton, 100);
-                }
-            };
-
-            addButton();
+        if (copyButton) {
+            copyButton.addEventListener('click', copyMarkdownLink);
+            document.body.appendChild(copyButton);
+            console.log('Markdown复制按钮已添加');
+        }
+        if (settingsButton) {
+            document.body.appendChild(settingsButton);
+            console.log('Markdown设置按钮已添加');
+        }
+        if (settingsModal) {
+            // 模态框默认隐藏，不需要立即显示
+            console.log('Markdown设置模态框已创建');
         }
     }
 
-    // 添加快捷键支持 (Ctrl+Shift+C 或 Cmd+Shift+C)
+    // 添加快捷键支持
     document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+        const [alt, shift, key] = CONFIG.shortcut.split('+');
+        const isAlt = alt === 'Alt' ? e.altKey : true;
+        const isShift = shift === 'Shift' ? e.shiftKey : true;
+        const isKey = e.key.toUpperCase() === key.toUpperCase();
+
+        if (isAlt && isShift && isKey) {
             e.preventDefault();
             copyMarkdownLink();
         }
@@ -327,16 +489,16 @@
 
     // 页面加载监听
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeButton);
+        document.addEventListener('DOMContentLoaded', initializeUI);
     } else {
-        initializeButton();
+        initializeUI();
     }
 
     // 对于YouTube等SPA，添加额外的重试机制
-    if (window.location.hostname.includes('youtube.com')) {
+    if (window.location.hostname.includes('youtube.com') || window.location.hostname.includes('google.com')) {
         // 多次重试确保按钮显示
-        setTimeout(initializeButton, 2000);
-        setTimeout(initializeButton, 5000);
+        setTimeout(initializeUI, 2000);
+        setTimeout(initializeUI, 5000);
 
         // 监听页面变化
         let retryCount = 0;
@@ -346,7 +508,7 @@
             if (!document.getElementById('markdown-copy-floating-btn') && retryCount < maxRetries) {
                 retryCount++;
                 buttonCreated = false; // 重置状态
-                setTimeout(initializeButton, 1000);
+                setTimeout(initializeUI, 1000);
             }
         });
 
