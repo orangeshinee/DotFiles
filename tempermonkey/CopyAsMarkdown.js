@@ -265,6 +265,9 @@
                 border-radius: 4px;
                 font-size: 14px;
             ">
+            <p style="font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 15px;">
+                支持格式: Ctrl+Alt+S, Alt+Shift+M, Ctrl+Shift+Alt+Q 等
+            </p>
             <div style="display: flex; justify-content: flex-end;">
                 <button id="save-shortcut-btn" style="
                     background: #667eea;
@@ -488,14 +491,31 @@
         }
     }
 
+    // 解析快捷键字符串
+    function parseShortcut(shortcut) {
+        const parts = shortcut.toUpperCase().split('+');
+        return {
+            ctrl: parts.includes('CTRL'),
+            alt: parts.includes('ALT'),
+            shift: parts.includes('SHIFT'),
+            key: parts.find(part => !['CTRL', 'ALT', 'SHIFT'].includes(part)) || 'M'
+        };
+    }
+
+    // 检查快捷键是否匹配
+    function isShortcutMatch(event, shortcut) {
+        const parsed = parseShortcut(shortcut);
+        return (
+            event.ctrlKey === parsed.ctrl &&
+            event.altKey === parsed.alt &&
+            event.shiftKey === parsed.shift &&
+            event.key.toUpperCase() === parsed.key
+        );
+    }
+
     // 添加快捷键支持
     document.addEventListener('keydown', function(e) {
-        const [alt, shift, key] = CONFIG.shortcut.split('+');
-        const isAlt = alt === 'Alt' ? e.altKey : true;
-        const isShift = shift === 'Shift' ? e.shiftKey : true;
-        const isKey = e.key.toUpperCase() === key.toUpperCase();
-
-        if (isAlt && isShift && isKey) {
+        if (isShortcutMatch(e, CONFIG.shortcut)) {
             e.preventDefault();
             copyMarkdownLink();
         }
