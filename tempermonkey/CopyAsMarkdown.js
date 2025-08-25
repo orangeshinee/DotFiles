@@ -13,10 +13,76 @@
 (function() {
     'use strict';
 
+    // 配置管理器
+    const ConfigManager = {
+        defaults: {
+            shortcut: 'Alt+Shift+M',
+            position: { top: '25%', right: '0' },
+            version: '2.1'
+        },
+        
+        get(key) {
+            return GM_getValue(key, this.defaults[key]);
+        },
+        
+        set(key, value) {
+            GM_setValue(key, value);
+        },
+        
+        export() {
+            const config = {};
+            Object.keys(this.defaults).forEach(key => {
+                config[key] = this.get(key);
+            });
+            return JSON.stringify(config, null, 2);
+        },
+        
+        import(configStr) {
+            try {
+                const config = JSON.parse(configStr);
+                Object.keys(config).forEach(key => {
+                    if (key in this.defaults) {
+                        this.set(key, config[key]);
+                    }
+                });
+                return true;
+            } catch (e) {
+                console.error('配置导入失败:', e);
+                return false;
+            }
+        },
+        
+        reset() {
+            Object.keys(this.defaults).forEach(key => {
+                this.set(key, this.defaults[key]);
+            });
+        }
+    };
+
     // 配置项
     const CONFIG = {
-        shortcut: GM_getValue('shortcut', 'Alt+Shift+M'), // 默认快捷键
-        position: GM_getValue('position', { top: '25%', right: '0' }), // 默认位置
+        shortcut: ConfigManager.get('shortcut'),
+        position: ConfigManager.get('position'),
+    };
+
+    // 缓存常用DOM元素
+    const DOMCache = {
+        _cache: new Map(),
+        
+        get(selector) {
+            if (!this._cache.has(selector)) {
+                this._cache.set(selector, document.querySelector(selector));
+            }
+            return this._cache.get(selector);
+        },
+        
+        clear() {
+            this._cache.clear();
+        },
+        
+        invalidate(selector) {
+            this._cache.delete(selector);
+        }
     };
 
     // 防重复创建管理器
@@ -25,12 +91,13 @@
         observers: new WeakMap(),
         
         hasButton(document) {
-            return !!document.getElementById('markdown-copy-floating-btn') || 
-                   this.buttons.has(document);
+            const cachedButton = DOMCache.get('#markdown-copy-floating-btn');
+            return !!cachedButton || this.buttons.has(document);
         },
         
         registerButton(document, button) {
             this.buttons.set(document, button);
+            DOMCache.invalidate('#markdown-copy-floating-btn');
         },
         
         cleanup(document) {
@@ -40,6 +107,7 @@
                 this.observers.delete(document);
             }
             this.buttons.delete(document);
+            DOMCache.clear();
         }
     };
 
@@ -276,8 +344,8 @@
             display: none; /* 默认隐藏 */
         `;
         modal.innerHTML = `
-            <h3 style="margin-top: 0; color: #667eea;">快捷键设置</h3>
-            <p style="font-size: 14px; margin-bottom: 15px;">输入您想要的快捷键 (例如: Alt+Shift+M)</p>
+            <h3 style="margin-top: 0; color: #667eea;">设置</h3>
+            <p style="font-size: 14px; margin-bottom: 15px;">快捷键设置</p>
             <input type="text" id="shortcut-input" value="${CONFIG.shortcut}" style="
                 width: calc(100% - 20px);
                 padding: 10px;
@@ -289,7 +357,16 @@
             <p style="font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 15px;">
                 支持格式: Ctrl+Alt+S, Alt+Shift+M, Ctrl+Shift+Alt+Q 等
             </p>
-            <div style="display: flex; justify-content: flex-end;">
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button id="reset-config-btn" style="
+                    background: #dc3545;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 15px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">重置</button>
                 <button id="save-shortcut-btn" style="
                     background: #667eea;
                     color: white;
@@ -298,7 +375,6 @@
                     padding: 8px 15px;
                     cursor: pointer;
                     font-size: 14px;
-                    margin-right: 10px;
                 ">保存</button>
                 <button id="cancel-shortcut-btn" style="
                     background: #f0f0f0;
@@ -337,6 +413,13 @@
 
         document.getElementById('save-shortcut-btn').addEventListener('click', saveShortcut);
         document.getElementById('cancel-shortcut-btn').addEventListener('click', hideSettingsModal);
+        document.getElementById('reset-config-btn').addEventListener('click', function() {
+            ConfigManager.reset();
+            CONFIG.shortcut = ConfigManager.get('shortcut');
+            document.getElementById('shortcut-input').value = CONFIG.shortcut;
+            updateButtonTitle();
+            showNotification('配置已重置', true);
+        });
         return modal;
     }
 
@@ -361,7 +444,7 @@
     function saveShortcut() {
         const newShortcut = document.getElementById('shortcut-input').value.trim();
         if (newShortcut) {
-            GM_setValue('shortcut', newShortcut);
+            ConfigManager.set('shortcut', newShortcut);
             CONFIG.shortcut = newShortcut; // 更新内存中的配置
             updateButtonTitle(); // 更新按钮提示
             showNotification('快捷键已保存!', true);
