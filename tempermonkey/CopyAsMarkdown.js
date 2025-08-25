@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CopyAsMarkdown
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.1
 // @description  快速复制当前网页地址为markdown格式 [title](url)，支持自定义快捷键，自动去除网站名称后缀
 // @author       MrHeTony
 // @match        *://*/*
@@ -692,6 +692,6 @@
         }, 3000);
     }
 
-    console.log('Markdown链接复制脚本已加载');
+console.log('Markdown链接复制脚本已加载');
 
-})();
+})();;
