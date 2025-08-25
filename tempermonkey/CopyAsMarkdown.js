@@ -389,28 +389,6 @@
         `;
         document.body.appendChild(modal);
 
-        // 使模态框可拖拽
-        let isDragging = false;
-        let offsetX, offsetY;
-
-        modal.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            offsetX = e.clientX - modal.getBoundingClientRect().left;
-            offsetY = e.clientY - modal.getBoundingClientRect().top;
-            modal.style.cursor = 'grabbing';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            modal.style.left = `${e.clientX - offsetX}px`;
-            modal.style.top = `${e.clientY - offsetY}px`;
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-            modal.style.cursor = 'grab';
-        });
-
         document.getElementById('save-shortcut-btn').addEventListener('click', saveShortcut);
         document.getElementById('cancel-shortcut-btn').addEventListener('click', hideSettingsModal);
         document.getElementById('reset-config-btn').addEventListener('click', function() {
@@ -528,7 +506,7 @@
         notification.textContent = message;
         notification.style.cssText = `
             position: fixed !important;
-            top: calc(25% + 60px) !important;
+            top: calc(5% + 60px) !important;
             right: 20px !important;
             z-index: 2147483646 !important;
             background: ${isSuccess ? '#28a745' : '#dc3545'} !important;
