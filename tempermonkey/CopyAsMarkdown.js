@@ -22,6 +22,17 @@
     // 防重复创建标志
     let buttonCreated = false;
 
+    // HTML转义工具函数
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     // 获取清理后的标题（去重版本）
     function getCleanTitleDedup() {
         let title = document.title.trim();
@@ -29,6 +40,9 @@
             const h1 = document.querySelector('h1');
             if (h1) title = h1.textContent.trim();
         }
+        
+        // HTML转义防止XSS
+        title = escapeHtml(title);
         
         // 移除markdown中的特殊字符
         title = title
