@@ -464,11 +464,22 @@
 
     // 复制到剪贴板的函数
     async function copyToClipboard(text) {
+        const errors = {
+            permission: '复制权限被拒绝，请检查浏览器权限设置',
+            secure: '当前页面不支持复制功能，请使用HTTPS或在安全上下文中访问',
+            fallback: '复制失败，请手动复制',
+            unknown: '复制时发生未知错误'
+        };
+
         try {
             if (navigator.clipboard && window.isSecureContext) {
                 await navigator.clipboard.writeText(text);
-                return true;
+                return { success: true };
+            } else if (navigator.clipboard) {
+                // 非安全上下文，使用回退方法
+                return { success: false, error: errors.secure };
             } else {
+                // 使用回退方法
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
                 textArea.style.position = 'fixed';
@@ -481,11 +492,24 @@
                 textArea.setSelectionRange(0, 99999);
                 const success = document.execCommand('copy');
                 document.body.removeChild(textArea);
-                return success;
+                
+                if (success) {
+                    return { success: true };
+                } else {
+                    return { success: false, error: errors.fallback };
+                }
             }
         } catch (error) {
             console.error('复制失败:', error);
-            return false;
+            let message = errors.unknown;
+            
+            if (error.name === 'NotAllowedError') {
+                message = errors.permission;
+            } else if (error.name === 'SecurityError') {
+                message = errors.secure;
+            }
+            
+            return { success: false, error: message };
         }
     }
 
@@ -554,18 +578,28 @@
 
     // 主要功能：复制markdown格式链接
     async function copyMarkdownLink() {
-        const title = getCleanTitleDedup();
-        const url = window.location.href;
-        const markdownLink = `[${title}](${url})`;
+        try {
+            const title = getCleanTitleDedup();
+            const url = window.location.href;
+            
+            if (!title || !url) {
+                showNotification('❌ 无法获取页面信息', false);
+                return;
+            }
+            
+            const markdownLink = `[${title}](${url})`;
+            const result = await copyToClipboard(markdownLink);
 
-        const success = await copyToClipboard(markdownLink);
-
-        if (success) {
-            showNotification('✅ 已复制到剪贴板!', true);
-            console.log('复制成功:', markdownLink);
-        } else {
-            showNotification('❌ 复制失败，请重试', false);
-            console.error('复制失败');
+            if (result.success) {
+                showNotification('✅ 已复制到剪贴板!', true);
+                console.log('复制成功:', markdownLink);
+            } else {
+                showNotification(`❌ ${result.error}`, false);
+                console.error('复制失败:', result.error);
+            }
+        } catch (error) {
+            console.error('复制过程中发生错误:', error);
+            showNotification('❌ 复制过程中发生错误', false);
         }
     }
 
