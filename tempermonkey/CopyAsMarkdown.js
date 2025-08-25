@@ -19,8 +19,29 @@
         position: GM_getValue('position', { top: '25%', right: '0' }), // 默认位置
     };
 
-    // 防重复创建标志
-    let buttonCreated = false;
+    // 防重复创建管理器
+    const ElementManager = {
+        buttons: new WeakMap(),
+        observers: new WeakMap(),
+        
+        hasButton(document) {
+            return !!document.getElementById('markdown-copy-floating-btn') || 
+                   this.buttons.has(document);
+        },
+        
+        registerButton(document, button) {
+            this.buttons.set(document, button);
+        },
+        
+        cleanup(document) {
+            const observer = this.observers.get(document);
+            if (observer) {
+                observer.disconnect();
+                this.observers.delete(document);
+            }
+            this.buttons.delete(document);
+        }
+    };
 
     // HTML转义工具函数
     function escapeHtml(unsafe) {
@@ -128,7 +149,7 @@
 
     // 创建悬浮图标按钮
     function createFloatingButton() {
-        if (buttonCreated || document.getElementById('markdown-copy-floating-btn')) {
+        if (ElementManager.hasButton(document)) {
             return null;
         }
 
@@ -180,7 +201,7 @@
             this.style.boxShadow = '-2px 0 15px rgba(0,0,0,0.3)';
         });
 
-        buttonCreated = true;
+        ElementManager.registerButton(document, button);
         return button;
     }
 
@@ -468,7 +489,7 @@
     // 初始化按钮和设置
     function initializeUI() {
         // 确保不重复创建
-        if (buttonCreated || document.getElementById('markdown-copy-floating-btn')) {
+        if (ElementManager.hasButton(document)) {
             return;
         }
 
@@ -539,13 +560,14 @@
         const maxRetries = 5;
 
         const observer = new MutationObserver(() => {
-            if (!document.getElementById('markdown-copy-floating-btn') && retryCount < maxRetries) {
+            if (!ElementManager.hasButton(document) && retryCount < maxRetries) {
                 retryCount++;
-                buttonCreated = false; // 重置状态
                 setTimeout(initializeUI, 1000);
             }
         });
 
+        ElementManager.observers.set(document, observer);
+        
         setTimeout(() => {
             if (document.body) {
                 observer.observe(document.body, { childList: true, subtree: true });
