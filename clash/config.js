@@ -393,7 +393,7 @@ const proxyGroupsConfig = [
       "name": "🕊️ 落地节点", 
       "type": "select",
       "proxies": [...landingNodeNames], 
-      "icon": "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/openwrt.svg"
+      "icon": "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/warp.svg"
     },
     {
       ...groupBaseOption,
@@ -647,13 +647,11 @@ function main(config) {
     if (regionOptions && Array.isArray(regionOptions.regions)) {
       // 获取当前所有代理名称（合并后的代理数组）
       const allProxyNames = [...config.proxies].map(p => typeof p === 'string' ? p : (p && p.name) ? p.name : null).filter(Boolean);
-
       regionOptions.regions.forEach(region => {
         // 保证 regex 是 RegExp 对象
         const reg = region.regex instanceof RegExp ? region.regex : new RegExp(region.regex, 'i');
         // 找到匹配的代理名
         let matched = allProxyNames.filter(name => reg.test(name));
-
         // 如果启用排除高倍率并且代理对象包含 ratio/weight 属性，则尝试排除倍率过高的节点
         if (regionOptions.excludeHighPercentage && region.ratioLimit != null) {
           matched = matched.filter(name => {
@@ -667,14 +665,13 @@ function main(config) {
 
         if (matched.length === 0) return; // 没有匹配则跳过
 
-        const groupProxies = ["🔰 模式选择", ...matched];
+        const groupProxies = [...matched];
 
         regionGroups.push({
           ...groupBaseOption,
           name: region.name,
           type: "select",
           proxies: groupProxies,
-          "include-all": true,
           icon: region.icon || undefined
         });
 
