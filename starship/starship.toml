@@ -1,3 +1,6 @@
+# 设置命令超时时间（毫秒）
+command_timeout = 2000
+
 # 目录
 [directory]
 truncation_length = 3
