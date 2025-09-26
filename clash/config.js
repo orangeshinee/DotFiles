@@ -278,6 +278,97 @@ const landingNodeProxies = [
 
 const landingNodeNames = landingNodeProxies.map(p => p.name);
 
+/**
+ * 地区配置，通过regex匹配代理节点名称
+ * regex会有一定概率误判，自己调整一下吧
+ * excludeHighPercentage是排除高倍率节点的开关，只对地区分组有效
+ * 倍率大于regions里的ratioLimit值的代理节点会被排除
+ */
+const regionOptions = {
+  excludeHighPercentage: true,
+  regions: [
+    {
+      name: 'HK香港',
+      regex: /港|🇭🇰|hk|hongkong|hong kong/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Hong_Kong.png',
+    },
+    {
+      name: 'US美国',
+      regex: /(?!.*aus)(?=.*(美|🇺🇸|us(?!t)|usa|american|united states)).*/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/United_States.png',
+    },
+    {
+      name: 'JP日本',
+      regex: /日本|🇯🇵|jp|japan/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Japan.png',
+    },
+    {
+      name: 'KR韩国',
+      regex: /韩|🇰🇷|kr|korea/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Korea.png',
+    },
+    {
+      name: 'SG新加坡',
+      regex: /新加坡|🇸🇬|sg|singapore/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Singapore.png',
+    },
+    {
+      name: 'CN中国大陆',
+      regex: /中国|🇨🇳|cn|china/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/China_Map.png',
+    },
+    {
+      name: 'TW台湾省',
+      regex: /台湾|🇹🇼|tw|taiwan|tai wan/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/China.png',
+    },
+    {
+      name: 'GB英国',
+      regex: /英|🇬🇧|uk|united kingdom|great britain/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/United_Kingdom.png',
+    },
+    {
+      name: 'DE德国',
+      regex: /德国|🇩🇪|de|germany/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Germany.png',
+    },
+    {
+      name: 'MY马来西亚',
+      regex: /马来|🇲🇾|my|malaysia/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Malaysia.png',
+    },
+    {
+      name: 'TK土耳其',
+      regex: /土耳其|🇹🇷|tk|turkey/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Turkey.png',
+    },
+    {
+      name: 'CA加拿大',
+      regex: /加拿大|🇨🇦|ca|canada/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Canada.png',
+    },
+    {
+      name: 'AU澳大利亚',
+      regex: /澳大利亚|🇦🇺|au|australia|sydney/i,
+      ratioLimit: 2,
+      icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Australia.png',
+    },
+  ],
+}
+
+
 const proxyGroupsConfig = [
     {
         ...groupBaseOption,
@@ -550,6 +641,53 @@ function main(config) {
       return group; // 返回（可能已修改的）组配置
   });
 
-  config["proxy-groups"] = finalProxyGroups; // 使用处理过的代理组
+  // ===== 新增：根据 regionOptions 生成地区分组 =====
+  const regionGroups = [];
+  try {
+    if (regionOptions && Array.isArray(regionOptions.regions)) {
+      // 获取当前所有代理名称（合并后的代理数组）
+      const allProxyNames = [...config.proxies].map(p => typeof p === 'string' ? p : (p && p.name) ? p.name : null).filter(Boolean);
+
+      regionOptions.regions.forEach(region => {
+        // 保证 regex 是 RegExp 对象
+        const reg = region.regex instanceof RegExp ? region.regex : new RegExp(region.regex, 'i');
+        // 找到匹配的代理名
+        let matched = allProxyNames.filter(name => reg.test(name));
+
+        // 如果启用排除高倍率并且代理对象包含 ratio/weight 属性，则尝试排除倍率过高的节点
+        if (regionOptions.excludeHighPercentage && region.ratioLimit != null) {
+          matched = matched.filter(name => {
+            const proxyObj = config.proxies.find(p => (p && p.name) === name);
+            // 支持常见字段：ratio、weight、percentage（没有则不过滤）
+            const ratio = proxyObj && (proxyObj.ratio ?? proxyObj.weight ?? proxyObj.percentage ?? null);
+            if (ratio == null) return true; // 没有倍率信息则保留
+            return Number(ratio) <= Number(region.ratioLimit);
+          });
+        }
+
+        if (matched.length === 0) return; // 没有匹配则跳过
+
+        const groupProxies = ["🔰 模式选择", ...matched];
+
+        regionGroups.push({
+          ...groupBaseOption,
+          name: region.name,
+          type: "select",
+          proxies: groupProxies,
+          "include-all": true,
+          icon: region.icon || undefined
+        });
+
+        console.log(`信息：为地区 [${region.name}] 创建分组，包含 ${matched.length} 个节点`);
+      });
+    }
+  } catch (e) {
+    console.warn("警告：生成地区分组时发生错误：", e);
+  }
+
+  // 把地区分组插入到代理组列表开头（可根据需要调整插入位置）
+  const mergedProxyGroups = [...regionGroups, ...finalProxyGroups];
+
+  config["proxy-groups"] = mergedProxyGroups; // 使用处理过的代理组
   return config;
 }
