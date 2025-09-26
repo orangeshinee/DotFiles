@@ -11,6 +11,15 @@ A_IconTip := "河童小生的AHK脚本"
 ; 导入ChangeVoice脚本功能
 #Include ChangeVoice.ahk
 
+; 检查是否以管理员运行，否则自动请求 UAC 提升
+if not A_IsAdmin
+{
+    Run '*RunAs "' A_ScriptFullPath '"'
+    ExitApp
+}
+
+
+
 ; 初始化 CapsLock 状态变量
 global LevelError := 0
 ; CapsLock 热键设置
@@ -23,7 +32,7 @@ CapsLock Up::
 {
     global LevelError
     if (LevelError > 0) {
-        ; 发送右Shift切换输入法
+        ; 发送ctrl+space切换输入法
         Send "^ "
     }
     LevelError := 0
